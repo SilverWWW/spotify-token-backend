@@ -16,6 +16,7 @@ app.get('/', (req, res) => {
 
 // token swap
 app.post('/api/token', async (req, res) => {
+    console.log('attempting token swap', req)
   try {
     const authorizationCode = req.body.code; // get "code"
 
@@ -35,7 +36,7 @@ app.post('/api/token', async (req, res) => {
       body: new URLSearchParams({
         grant_type: 'authorization_code',
         code: authorizationCode,
-        redirect_uri: 'beatsync://spotify-login-callback'
+        redirect_uri: process.env.SPOTIFY_REDIRECT_URI
       })
     });
 
@@ -67,6 +68,7 @@ app.post('/api/token', async (req, res) => {
 
 // token refresh endpoint
 app.post('/api/refresh', async (req, res) => {
+    console.log('attempting token refresh', req)
   try {
     const refreshToken = req.body.refresh_token;
 
