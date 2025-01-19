@@ -21,9 +21,11 @@ app.post('/api/token', async (req, res) => {
     const authorizationCode = req.body.code; // get "code"
 
     if (!authorizationCode) {
+        console.log("no auth code")
       return res.status(400).json({ error: 'No auth code' });
     }
 
+    console.log("hitting spotify swap endpoint with code", authorizationCode)
     // exchange code with spotify
     const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
       method: 'POST',
@@ -50,10 +52,14 @@ app.post('/api/token', async (req, res) => {
     //   token_type: 'Bearer'
     // }
 
+    console.log("got spotify swap response", tokenData)
+
     if (tokenData.error) {
+        console.log("token data error", error)
       return res.status(400).json({ error: tokenData.error, description: tokenData.error_description });
     }
 
+    console.log("returning token data")
     // return tokens
     res.json({
       access_token: tokenData.access_token,
