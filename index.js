@@ -8,8 +8,38 @@ import fetch from 'node-fetch';
 const app = express();
 const port = process.env.PORT || 3000;
 
+let cachedToken = null;
+let tokenExpirationTime = null;
+
 app.use(bodyParser.urlencoded({ extended: false }));
 
+// client credential token acquisition
+async function getClientCredentialsToken() {
+  if (cachedToken && Date.now() < tokenExpirationTime) {
+    return cachedToken;
+  }
+
+  const response = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Basic ' + Buffer.from(`${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`).toString('base64'),
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({ grant_type: 'client_credentials' }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(`failed to fetch token: ${data.error_description}`);
+  }
+
+  cachedToken = data.access_token;
+  tokenExpirationTime = Date.now() + data.expires_in * 1000;
+
+  return cachedToken;
+}
+
+// health check
 app.get('/', (req, res) => {
   res.send('Server is running');
 });
@@ -118,11 +148,7 @@ app.get('/api/song/:id/bpm', async (req, res) => {
 
   try {
     const songId = req.params.id;
-    const accessToken = req.headers.authorization?.split(' ')[1];
-
-    if (!accessToken) {
-      return res.status(401).json({ error: 'missing or invalid access token' });
-    }
+    const accessToken = getClientCredentialsToken()
 
     const response = await fetch(`https://api.spotify.com/v1/audio-features/${songId}`, {
       method: 'GET',
