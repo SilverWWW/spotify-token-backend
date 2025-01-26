@@ -16,6 +16,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // client credential token acquisition
 async function getClientCredentialsToken() {
   if (cachedToken && Date.now() < tokenExpirationTime) {
+    console.log("got a cached token: ", cachedToken)
     return cachedToken;
   }
 
@@ -30,12 +31,14 @@ async function getClientCredentialsToken() {
 
   const data = await response.json();
   if (!response.ok) {
+    console.log("error fetching new cc token: ", data.error_description)
     throw new Error(`failed to fetch token: ${data.error_description}`);
   }
 
   cachedToken = data.access_token;
   tokenExpirationTime = Date.now() + data.expires_in * 1000;
 
+  console.log("returning new cc token: ", cachedToken)
   return cachedToken;
 }
 
@@ -148,6 +151,11 @@ app.get('/api/song/:id/bpm', async (req, res) => {
 
   try {
     const songId = req.params.id;
+
+    if (!songId) {
+      return res.status(400).json({ error: 'Song ID is required' });
+    }    
+
     const accessToken = await getClientCredentialsToken()
 
     const response = await fetch(`https://api.spotify.com/v1/audio-features/${songId}`, {
