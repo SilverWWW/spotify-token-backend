@@ -148,7 +148,7 @@ app.get('/api/song/:id/bpm', async (req, res) => {
 
   try {
     const songId = req.params.id;
-    const accessToken = getClientCredentialsToken()
+    const accessToken = await getClientCredentialsToken()
 
     const response = await fetch(`https://api.spotify.com/v1/audio-features/${songId}`, {
       method: 'GET',
