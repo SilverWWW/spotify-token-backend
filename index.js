@@ -16,7 +16,7 @@ app.get('/', (req, res) => {
 
 // token swap
 app.post('/api/token', async (req, res) => {
-    console.log('attempting token swap', req)
+  console.log('attempting token swap')
   try {
     const authorizationCode = req.body.code; // get "code"
 
@@ -25,7 +25,6 @@ app.post('/api/token', async (req, res) => {
       return res.status(400).json({ error: 'No auth code' });
     }
 
-    console.log("hitting spotify swap endpoint with code", authorizationCode)
     // exchange code with spotify
     const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
       method: 'POST',
@@ -52,10 +51,8 @@ app.post('/api/token', async (req, res) => {
     //   token_type: 'Bearer'
     // }
 
-    console.log("got spotify swap response", tokenData)
-
     if (tokenData.error) {
-        console.log("token data error", error)
+      console.log("token data error", error)
       return res.status(400).json({ error: tokenData.error, description: tokenData.error_description });
     }
 
@@ -74,7 +71,7 @@ app.post('/api/token', async (req, res) => {
 
 // token refresh endpoint
 app.post('/api/refresh', async (req, res) => {
-    console.log('attempting token refresh', req)
+  console.log('attempting token refresh', req)
   try {
     const refreshToken = req.body.refresh_token;
 
@@ -104,6 +101,7 @@ app.post('/api/refresh', async (req, res) => {
     }
 
     // return new access token
+    console.log("returning refresh access token")
     res.json({
       access_token: refreshData.access_token,
       expires_in: refreshData.expires_in
@@ -111,6 +109,101 @@ app.post('/api/refresh', async (req, res) => {
   } catch (err) {
     console.error('Token refresh error:', err);
     res.status(500).json({ error: 'Server error during token refresh' });
+  }
+});
+
+// get song bpm
+app.get('/api/song/:id/bpm', async (req, res) => {
+  console.log('getting bpm for: ', req.params.id);
+
+  try {
+    const songId = req.params.id;
+    const accessToken = req.headers.authorization?.split(' ')[1];
+
+    if (!accessToken) {
+      return res.status(401).json({ error: 'missing or invalid access token' });
+    }
+
+    const response = await fetch(`https://api.spotify.com/v1/audio-features/${songId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return res.status(response.status).json({ error: errorData.error, message: errorData.error.message });
+    }
+
+    const audioFeatures = await response.json();
+    res.json({ bpm: audioFeatures.tempo });
+  } catch (err) {
+    console.error('Error fetching BPM:', err);
+    res.status(500).json({ error: 'Server error while fetching BPM' });
+  }
+});
+
+// get user playlists
+app.get('/api/user/playlists', async (req, res) => {
+  console.log('getting user playlists');
+
+  try {
+    const accessToken = req.headers.authorization?.split(' ')[1];
+
+    if (!accessToken) {
+      return res.status(401).json({ error: 'Missing or invalid access token' });
+    }
+
+    const response = await fetch('https://api.spotify.com/v1/me/playlists', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return res.status(response.status).json({ error: errorData.error, message: errorData.error.message });
+    }
+
+    const playlists = await response.json();
+    res.json(playlists);
+  } catch (err) {
+    console.error('err fetching playlists:', err);
+    res.status(500).json({ error: 'Server err while fetching playlists' });
+  }
+});
+
+// get playlist songs
+app.get('/api/playlist/:id/songs', async (req, res) => {
+  console.log('Fetching songs for playlist:', req.params.id);
+
+  try {
+    const playlistId = req.params.id;
+    const accessToken = req.headers.authorization?.split(' ')[1];
+
+    if (!accessToken) {
+      return res.status(401).json({ error: 'Missing or invalid access token' });
+    }
+
+    const response = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return res.status(response.status).json({ error: errorData.error, message: errorData.error.message });
+    }
+
+    const playlistTracks = await response.json();
+    res.json(playlistTracks);
+  } catch (err) {
+    console.error('err fetching playlist songs:', err);
+    res.status(500).json({ error: 'Server err while fetching playlist songs' });
   }
 });
 
