@@ -133,6 +133,7 @@ app.get('/api/song/:id/bpm', async (req, res) => {
 
     if (!response.ok) {
       const errorData = await response.json();
+      console.log("Error", errorData.error, errorData.error.message)
       return res.status(response.status).json({ error: errorData.error, message: errorData.error.message });
     }
 
