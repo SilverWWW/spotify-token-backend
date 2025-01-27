@@ -246,3 +246,23 @@ app.get('/api/playlist/:id/songs', async (req, res) => {
 app.listen(port, '0.0.0.0', () => {
   console.log(`Spotify token server listening on port ${port}`);
 });
+
+// credits
+app.get('/bpm-backlink', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>GetSongBPM Backlink</title>
+    </head>
+    <body>
+        <h1>App Backlink for GetSongBPM</h1>
+        <p>
+            Powered by <a href="https://getsongbpm.com" target="_blank">GetSongBPM</a>
+        </p>
+    </body>
+    </html>
+  `);
+});
